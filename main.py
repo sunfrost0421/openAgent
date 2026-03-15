@@ -44,6 +44,7 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     import asyncio
+    import os
 
     # 配置根日志级别，显示应用内部日志
     logging.basicConfig(
@@ -52,16 +53,26 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S"
     )
 
-    # 检测是否在调试器中运行（PyCharm 调试模式）
-    import sys
-    if sys.gettrace() is not None:
-        # 调试模式：使用兼容方式启动，避免 loop_factory 参数问题
+    # 始终使用调试兼容的启动方式
+    # 通过环境变量区分模式（可选）
+    debug_mode = os.getenv("DEBUG_MODE", "false").lower() == "true"
+    
+    if debug_mode:
+        # 显式调试模式：使用 Server.serve() 直接启动
         config = uvicorn.Config(app, host="0.0.0.0", port=8000, loop="asyncio")
         server = uvicorn.Server(config)
-
-        # 在调试器中需要直接运行 serve 协程
-        print("Starting in debug mode...")
+        print("Starting in explicit debug mode...")
         asyncio.run(server.serve())
     else:
-        # 正常运行模式
-        uvicorn.run(app, host="0.0.0.0", port=8000)
+        # 默认模式：使用 uvicorn.run()
+        # 如果在 PyCharm 中遇到问题，设置 DEBUG_MODE=true 环境变量
+        try:
+            uvicorn.run(app, host="0.0.0.0", port=8000)
+        except TypeError as e:
+            if "loop_factory" in str(e):
+                print("Detected loop_factory compatibility issue, switching to debug mode...")
+                config = uvicorn.Config(app, host="0.0.0.0", port=8000, loop="asyncio")
+                server = uvicorn.Server(config)
+                asyncio.run(server.serve())
+            else:
+                raise

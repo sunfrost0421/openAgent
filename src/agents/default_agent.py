@@ -26,6 +26,7 @@ class DefaultAgent(BaseExecutor):
         # 构建消息
         messages = [
             SystemMessage(content=Prompts.get("default_agent")),
+            *self.get_context_messages(),
             HumanMessage(content=self.user_message)
         ]
 

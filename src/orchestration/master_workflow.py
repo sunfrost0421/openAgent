@@ -104,7 +104,11 @@ class MasterWorkflow:
 
         # 获取执行器类并实例化
         executor_class = agent_registry.get_executor(intent_result.agent_name)
-        executor: BaseExecutor = executor_class(session=session, user_message=message)
+        executor: BaseExecutor = executor_class(
+            session=session,
+            user_message=message,
+            session_manager=self._session_manager
+        )
 
         # 执行
         self._logger.info(f"Executing agent: {intent_result.agent_name}")

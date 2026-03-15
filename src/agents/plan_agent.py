@@ -29,6 +29,7 @@ class PlanAgent(BaseExecutor):
         # 构建消息
         messages = [
             SystemMessage(content=Prompts.get("plan_agent")),
+            *self.get_context_messages(),
             HumanMessage(content=self.user_message)
         ]
 

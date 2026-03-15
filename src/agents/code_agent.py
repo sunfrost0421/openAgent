@@ -29,6 +29,7 @@ class CodeAgent(BaseExecutor):
         # 构建消息
         messages = [
             SystemMessage(content=Prompts.get("code_agent")),
+            *self.get_context_messages(),
             HumanMessage(content=self.user_message)
         ]
 
