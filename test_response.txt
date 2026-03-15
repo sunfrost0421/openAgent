@@ -1,0 +1,48 @@
+Agent: plan_agent
+
+Reply:
+I'd be happy to help you create a weekly study plan! To make this plan effective and realistic for your specific situation, I need a bit more information.
+
+However, I can provide you with a **robust framework** to get started immediately, along with the questions I need to customize it for you.
+
+### 📋 Step 1: Clarifying Questions
+To tailor this plan, please let me know:
+1.  **What subject(s)** are you studying?
+2.  **What is your goal?** (e.g., passing an exam, learning a new skill, completing coursework)
+3.  **What is your deadline?** (e.g., exam date, end of semester)
+4.  **How many hours per day** can you realistically commit?
+5.  **What other commitments** do you have? (e.g., job, classes, family)
+6.  **What times of day** are you most focused? (e.g., early morning, night owl)
+
+---
+
+### 📅 Step 2: General Weekly Study Framework
+Until you provide those details, here is a balanced template based on productivity best practices (spaced repetition and deep work).
+
+**Core Principles:**
+*   **Deep Work Blocks:** 90-minute focused sessions.
+*   **Active Recall:** Testing yourself rather than just re-reading.
+*   **Rest:** Essential for memory consolidation.
+
+| Day | Focus | Activity | Duration |
+| :--- | :--- | :--- | :--- |
+| **Monday** | **Foundation** | Review core concepts & set weekly goals | 2 - 3 Hours |
+| **Tuesday** | **Deep Dive** | Tackle hardest topics when energy is high | 2 - 3 Hours |
+| **Wednesday** | **Application** | Practice problems, essays, or projects | 2 - 3 Hours |
+| **Thursday** | **Review** | Spaced repetition of Mon/Tue material | 1 - 2 Hours |
+| **Friday** | **Wrap-Up** | Complete pending tasks & summarize notes | 1 - 2 Hours |
+| **Saturday** | **Flex/Catch-up** | Optional review or rest (Light study only) | 1 Hour Max |
+| **Sunday** | **Rest & Plan** | **No Study.** Plan next week & relax | 0 Hours |
+
+---
+
+### 🛠 Step 3: Productivity Techniques to Use
+1.  **The Pomodoro Technique:** Study for 25 minutes, break for 5 minutes. After 4 cycles, take a longer 20-minute break.
+2.  **Time Blocking:** Assign specific subjects to specific times (e.g., "Math is only for Mornings").
+3.  **The 2-Minute Rule:** If a study task takes less than 2 minutes (e.g., emailing a professor, organizing files), do it immediately.
+4.  **Environment Design:** Keep your study space clutter-free and phone-free during deep work blocks.
+
+---
+
+### 🚀 Next Steps
+**Reply with the answers to the questions in Step 1**, and I will generate a customized schedule with specific time slots and task breakdowns for you!
