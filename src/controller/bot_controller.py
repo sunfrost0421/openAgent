@@ -2,24 +2,10 @@
 
 import logging
 
-from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
 
-from src.orchestration.master_workflow import master_workflow
-
-
-class ChatRequest(BaseModel):
-    """聊天请求"""
-    user_id: str
-    channel_id: str
-    message: str
-
-
-class ChatResponse(BaseModel):
-    """聊天响应"""
-    session_id: str
-    reply: str
-    agent_name: str
+from src.core.orchestration import master_workflow
+from src.controller.schemas import ChatRequest, ChatResponse
 
 
 router = APIRouter()

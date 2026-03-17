@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from typing import Dict
 
-from src.core.session_store import BaseSessionStore, Session
+from src.core.session.models import BaseSessionStore, Session
 
 
 class MemorySessionStore(BaseSessionStore):
@@ -46,4 +46,4 @@ class MemorySessionStore(BaseSessionStore):
 
 
 # 全局内存会话存储实例
-memory_session_store = MemorySessionStore()
+memory_store = MemorySessionStore()

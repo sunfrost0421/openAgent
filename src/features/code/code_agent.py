@@ -4,10 +4,10 @@ from typing import List
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 
-from src.orchestration.base_executor import BaseExecutor
-from src.orchestration.registry import agent_registry
+from src.core.orchestration.executor import BaseExecutor
+from src.core.orchestration.registry import agent_registry
 from src.infra.llm import create_llm
-from src.agents.prompts import Prompts
+from src.features.prompts import Prompts
 
 
 @agent_registry.register(

@@ -2,9 +2,14 @@
 
 import pytest
 
-# 导入 agents 模块以注册 Agent
-from src.agents import default_agent, code_agent, plan_agent  # noqa: F401
-from src.core.intent import intent_recognizer, IntentResult
+# 导入 features 模块以注册 Agent
+from src.features.code import code_agent  # noqa: F401
+from src.core.orchestration.registry import agent_registry
+from src.core.orchestration.intent import intent_recognizer
+
+# 显式注册所有 Agent 到意图识别器
+for name, metadata in agent_registry.get_all_metadata().items():
+    intent_recognizer.register_agent(metadata)
 
 
 @pytest.mark.asyncio

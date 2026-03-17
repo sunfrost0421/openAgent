@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-本文件为 Claude Code (claude.ai/code) 在此代码仓库中工作提供指导。
+本文件为 Claude Code (claude.ai/code) 在此代码仓库中工作提供指导，请全程使用中文与用户对话。
 
 ## 构建和开发命令
 
@@ -37,26 +37,49 @@ uvicorn main:app --host=0.0.0.0 --port=8000
 
 ```
 src/
-├── controller/        # FastAPI 入口
-│   └── bot_controller.py
-├── orchestration/     # 工作流编排
-│   ├── master_workflow.py   # 主流程：预处理 → 意图识别 → 执行 → 后处理
-│   ├── base_executor.py     # 所有 Agent 的基类
-│   └── registry.py          # 使用装饰器注册 Agent
-├── agents/            # 专用 Agent
-│   ├── default_agent.py     # 意图不清晰时的默认 Agent
-│   ├── code_agent.py        # 代码相关任务
-│   ├── plan_agent.py        # 计划与任务管理
-│   └── prompts.py           # 系统提示词
-├── core/              # 核心业务逻辑
-│   ├── intent.py              # 三层意图识别
-│   ├── session_manager.py     # 会话生命周期管理
-│   ├── session_store.py       # Session/Turn 数据模型
-│   └── memory_session_store.py # 内存会话存储
-└── infra/             # 基础设施
-    ├── llm.py               # LLM 客户端工厂
-    ├── database.py          # 数据库连接 (SQLAlchemy)
-    └── logger.py            # 日志配置
+├── config/            # 配置层（最底层，无内部依赖）
+│   └── config.py
+│
+├── infra/             # 基础设施层（仅依赖 config）
+│   ├── llm.py               # LLM 客户端工厂
+│   ├── database.py          # 数据库连接 (SQLAlchemy)
+│   └── logger.py            # 日志配置
+│
+├── core/              # 领域层（依赖 infra）
+│   ├── __init__.py          # 统一导出
+│   ├── types.py             # 共享类型定义 (IntentMatch, IntentResult)
+│   ├── workflow/            # 【工作流相关】
+│   │   ├── __init__.py
+│   │   ├── master.py        # MasterWorkflow (主工作流)
+│   │   ├── registry.py      # AgentRegistry (Agent 注册)
+│   │   ├── intent.py        # IntentRecognizer (意图识别)
+│   │   ├── executor.py      # BaseExecutor (执行器基类)
+│   │   └── types.py         # 共享类型 (AgentMetadata, IntentMatch, IntentResult)
+│   └── session/             # 【会话管理相关】
+│       ├── __init__.py
+│       ├── models.py        # Session/Turn 数据模型
+│       ├── store.py         # MemorySessionStore 存储实现
+│       └── manager.py       # SessionManager 生命周期管理
+│
+├── services/          # 服务层（依赖 core）
+│   ├── prompts.py             # 系统提示词
+│   └── agents/
+│       ├── __init__.py
+│       ├── default_agent.py   # 意图不清晰时的默认 Agent
+│       ├── code_agent.py      # 代码相关任务
+│       └── plan_agent.py      # 计划与任务管理
+│
+├── controller/        # 接口层（依赖 services）
+│   ├── bot_controller.py      # FastAPI 入口
+│   └── schemas.py             # Pydantic 请求/响应模型
+│
+└── main.py            # 应用入口，显式注册 Agent
+```
+
+### 依赖关系
+
+```
+controller → services → core → infra → config
 ```
 
 ### 核心设计模式
@@ -73,7 +96,11 @@ src/
 - 可配置的超时时间 (默认 30 分钟)
 
 **Agent 注册**:
+
+新的架构中，Agent 通过装饰器注册到 `agent_registry`，然后在 `main.py` 的 `lifespan` 函数中显式同步到 `intent_recognizer`：
+
 ```python
+# src/features/code/code_agent.py
 @agent_registry.register(
     name="code_agent",
     description="处理代码相关请求",
@@ -83,13 +110,17 @@ src/
 class CodeAgent(BaseExecutor):
     async def run(self) -> List[BaseMessage]:
         ...
+
+# main.py - lifespan 函数中显式注册
+for name, metadata in agent_registry.get_all_metadata().items():
+    intent_recognizer.register_agent(metadata)
 ```
 
 **请求流程**:
 ```
-用户输入 → BotController → MasterWorkflow
-       → IntentRecognizer (命令 → 关键词 → LLM)
-       → Agent Executor → SessionManager (保存轮次)
+用户输入 → BotController → MasterWorkflow (core/workflow/master.py)
+       → IntentRecognizer (core/workflow/intent.py)
+       → Agent Executor (services/agents/*) → SessionManager (保存轮次)
        → 响应
 ```
 
@@ -104,5 +135,25 @@ class CodeAgent(BaseExecutor):
 ### 测试注意事项
 
 - 测试使用 `pytest-asyncio`,配置为 `asyncio_mode = "auto"`
-- Agent 注册是副作用操作：需要导入 agents 模块来填充注册表
-- 测试文件必须导入 `src.agents` 以确保测试前 Agent 已注册
+- Agent 注册是副作用操作：需要导入 `src.services.agents` 模块来填充注册表
+- 测试文件必须在导入后显式注册 Agent 到 `intent_recognizer`:
+
+```python
+from src.features.code import code_agent  # noqa: F401
+from src.features.plan import plan_agent
+from src.features.default import default_agent
+from src.core.orchestration.registry import agent_registry
+from src.core.orchestration.intent import intent_recognizer
+
+# 显式注册所有 Agent 到意图识别器
+for name, metadata in agent_registry.get_all_metadata().items():
+    intent_recognizer.register_agent(metadata)
+```
+
+### 向后兼容
+
+旧的导入路径已废弃，请使用新的模块结构：
+- `src.core.orchestration.*` → 已删除，使用 `src.core.workflow.*`
+- `src.core.session.session_store` → 已删除，使用 `src.core.session.models`
+- `src.core.session.memory_store` → 已删除，使用 `src.core.session.store`
+- `src.core.session.session_manager` → 已删除，使用 `src.core.session.manager`

@@ -424,7 +424,7 @@ import asyncio
 from datetime import datetime
 from typing import Dict
 
-from src.core.session_store import BaseSessionStore, Session
+from src.core.session.session_store import BaseSessionStore, Session
 from src.infra import logger
 
 
@@ -497,8 +497,8 @@ import pytest
 import asyncio
 from datetime import datetime, timedelta
 
-from src.core.memory_session_store import MemorySessionStore
-from src.core.session_store import Session
+from src.core.session.memory_session_store import MemorySessionStore
+from src.core.session.session_store import Session
 
 
 @pytest.fixture
@@ -580,8 +580,8 @@ from typing import List
 
 from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
 
-from src.core.session_store import Session, Turn
-from src.core.memory_session_store import MemorySessionStore
+from src.core.session.session_store import Session, Turn
+from src.core.session.memory_session_store import MemorySessionStore
 from src.config import Config
 
 
@@ -608,19 +608,19 @@ class SessionManager:
         return f"{user_id}_{channel_id}"
 
     async def get_or_create_session(
-        self, user_id: str, channel_id: str
+            self, user_id: str, channel_id: str
     ) -> Session:
         """获取或创建会话"""
         session_id = self.create_session_id(user_id, channel_id)
         return await self._store.get_session(session_id)
 
     async def add_turn(
-        self,
-        session: Session,
-        agent_name: str,
-        user_message: str,
-        messages: List[BaseMessage],
-        final_reply: str,
+            self,
+            session: Session,
+            agent_name: str,
+            user_message: str,
+            messages: List[BaseMessage],
+            final_reply: str,
     ) -> Turn:
         """添加对话轮次
 
@@ -704,8 +704,8 @@ Create: `tests/core/test_session_manager.py`
 import pytest
 from langchain_core.messages import HumanMessage, AIMessage
 
-from src.core.session_manager import SessionManager
-from src.core.memory_session_store import MemorySessionStore
+from src.core.session.session_manager import SessionManager
+from src.core.session.memory_session_store import MemorySessionStore
 
 
 @pytest.fixture
@@ -1037,7 +1037,7 @@ Create: `tests/core/test_intent.py`
 import pytest
 import asyncio
 
-from src.core.intent import (
+from src.core.orchestration.intent import (
     IntentRecognizer,
     AgentMetadata,
     IntentResult,
@@ -1142,7 +1142,7 @@ from typing import List
 
 from langchain_core.messages import BaseMessage
 
-from src.core.session_store import Session
+from src.core.session.session_store import Session
 
 
 class BaseExecutor(ABC):
@@ -1208,8 +1208,8 @@ git commit -m "feat: add base executor class"
 
 from typing import Callable, Dict, List, Optional, Type
 
-from src.core.intent import AgentMetadata
-from src.core import intent
+from src.core.orchestration.intent import AgentMetadata
+from src.core.orchestration import intent
 from src.orchestration.base_executor import BaseExecutor
 from src.infra import logger
 
@@ -1225,11 +1225,11 @@ class AgentRegistry:
         self._logger = logger.getLogger("AgentRegistry")
 
     def register(
-        self,
-        name: str,
-        description: str,
-        keywords: List[str],
-        command: Optional[str] = None,
+            self,
+            name: str,
+            description: str,
+            keywords: List[str],
+            command: Optional[str] = None,
     ) -> Callable[[Type[BaseExecutor]], Type[BaseExecutor]]:
         """注册 Agent 装饰器
 
@@ -1253,6 +1253,7 @@ class AgentRegistry:
                 async def run(self):
                     ...
         """
+
         def decorator(cls: Type[BaseExecutor]) -> Type[BaseExecutor]:
             # 注册执行器类
             self._executors[name] = cls
@@ -1321,9 +1322,9 @@ from typing import NamedTuple
 
 from langchain_core.messages import BaseMessage, AIMessage
 
-from src.core.session_manager import SessionManager, session_manager
+from src.core.session.session_manager import SessionManager, session_manager
 from src.core.intent import IntentRecognizer, intent_recognizer, IntentResult
-from src.core.session_store import Session
+from src.core.session.session_store import Session
 from src.orchestration.base_executor import BaseExecutor
 from src.orchestration.registry import agent_registry
 from src.infra import logger
@@ -1348,9 +1349,9 @@ class MasterWorkflow:
     """
 
     def __init__(
-        self,
-        session_manager: SessionManager | None = None,
-        intent_recognizer: IntentRecognizer | None = None,
+            self,
+            session_manager: SessionManager | None = None,
+            intent_recognizer: IntentRecognizer | None = None,
     ):
         self._session_manager = session_manager or session_manager
         self._intent_recognizer = intent_recognizer or intent_recognizer
@@ -1358,7 +1359,7 @@ class MasterWorkflow:
         self._logger = logger.getLogger("MasterWorkflow")
 
     async def execute(
-        self, user_id: str, channel_id: str, message: str
+            self, user_id: str, channel_id: str, message: str
     ) -> WorkflowResult:
         """执行工作流
 
@@ -1407,11 +1408,11 @@ class MasterWorkflow:
         return result
 
     async def _execute_agent(
-        self,
-        user_id: str,
-        channel_id: str,
-        message: str,
-        intent_result: IntentResult,
+            self,
+            user_id: str,
+            channel_id: str,
+            message: str,
+            intent_result: IntentResult,
     ) -> list[BaseMessage]:
         """执行 Agent"""
         # 获取会话
@@ -1495,7 +1496,7 @@ git commit -m "feat: add master workflow"
 - [ ] **Step 1: 创建提示词管理**
 
 ```python
-# src/agents/prompts.py
+# src/code/prompts.py
 """Agent 系统提示词管理"""
 
 
@@ -1557,7 +1558,7 @@ Guidelines:
 - [ ] **Step 2: 更新 agents __init__.py**
 
 ```python
-# src/agents/__init__.py
+# src/code/__init__.py
 from .prompts import Prompts
 
 __all__ = ["Prompts"]
@@ -1566,7 +1567,7 @@ __all__ = ["Prompts"]
 - [ ] **Step 3: 提交**
 
 ```bash
-git add src/agents/
+git add src/code/
 git commit -m "feat: add agent prompts"
 ```
 
@@ -1581,7 +1582,7 @@ git commit -m "feat: add agent prompts"
 - [ ] **Step 1: 创建 Default Agent**
 
 ```python
-# src/agents/default_agent.py
+# src/code/default_agent.py
 """Default Agent - 通用聊天助手"""
 
 from typing import List
@@ -1622,7 +1623,7 @@ class DefaultAgent(BaseExecutor):
 - [ ] **Step 2: 更新 agents __init__.py**
 
 ```python
-# src/agents/__init__.py
+# src/code/__init__.py
 from .prompts import Prompts
 from . import default_agent  # noqa: F401 - 注册 Agent
 from . import code_agent  # noqa: F401
@@ -1634,7 +1635,7 @@ __all__ = ["Prompts"]
 - [ ] **Step 3: 提交**
 
 ```bash
-git add src/agents/default_agent.py src/agents/__init__.py
+git add src/code/default_agent.py src/code/__init__.py
 git commit -m "feat: add default agent"
 ```
 
@@ -1648,7 +1649,7 @@ git commit -m "feat: add default agent"
 - [ ] **Step 1: 创建 Code Agent**
 
 ```python
-# src/agents/code_agent.py
+# src/code/code_agent.py
 """Code Agent - 代码助手"""
 
 from typing import List
@@ -1692,7 +1693,7 @@ class CodeAgent(BaseExecutor):
 - [ ] **Step 2: 提交**
 
 ```bash
-git add src/agents/code_agent.py
+git add src/code/code_agent.py
 git commit -m "feat: add code agent"
 ```
 
@@ -1706,7 +1707,7 @@ git commit -m "feat: add code agent"
 - [ ] **Step 1: 创建 Plan Agent**
 
 ```python
-# src/agents/plan_agent.py
+# src/code/plan_agent.py
 """Plan Agent - 计划管理助手"""
 
 from typing import List
@@ -1750,7 +1751,7 @@ class PlanAgent(BaseExecutor):
 - [ ] **Step 2: 提交**
 
 ```bash
-git add src/agents/plan_agent.py
+git add src/code/plan_agent.py
 git commit -m "feat: add plan agent"
 ```
 
@@ -1877,8 +1878,7 @@ from fastapi import FastAPI
 
 from src.controller.bot_controller import router
 from src.infra import logger
-from src.core.session_manager import session_manager
-
+from src.core.session.session_manager import session_manager
 
 _logger = logger.getLogger("main")
 
@@ -1912,6 +1912,7 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
 

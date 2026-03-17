@@ -5,10 +5,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-# 导入 agents 模块以注册 Agent
-from src.agents import default_agent, code_agent, plan_agent  # noqa: F401
+# 导入 features 模块以注册 Agent
+from src.features.code import code_agent  # noqa: F401
+from src.core.orchestration.registry import agent_registry
+from src.core.orchestration.intent import intent_recognizer
 from src.controller.bot_controller import router
-from src.core.session_manager import session_manager
+from src.core.session.manager import session_manager
 
 
 _logger = logging.getLogger("main")
@@ -18,6 +20,10 @@ _logger = logging.getLogger("main")
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     _logger.info("Starting Agent System...")
+    # 显式注册所有 Agent 到意图识别器
+    for name, metadata in agent_registry.get_all_metadata().items():
+        intent_recognizer.register_agent(metadata)
+        _logger.info(f"Registered agent with intent_recognizer: {name}")
     yield
     _logger.info("Shutting down Agent System...")
     # 清理过期会话

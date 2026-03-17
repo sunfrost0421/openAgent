@@ -3,9 +3,8 @@
 import logging
 from typing import Callable, Dict, List, Optional, Type
 
-from src.core.intent import AgentMetadata
-from src.core import intent
-from src.orchestration.base_executor import BaseExecutor
+from src.core.orchestration.models import AgentMetadata
+from src.core.orchestration.executor import BaseExecutor
 
 
 class AgentRegistry:
@@ -16,6 +15,7 @@ class AgentRegistry:
 
     def __init__(self):
         self._executors: Dict[str, Type[BaseExecutor]] = {}
+        self._metadata: Dict[str, AgentMetadata] = {}
         self._logger = logging.getLogger("AgentRegistry")
 
     def register(
@@ -51,14 +51,13 @@ class AgentRegistry:
             # 注册执行器类
             self._executors[name] = cls
 
-            # 注册到意图识别器
-            metadata = AgentMetadata(
+            # 保存元数据
+            self._metadata[name] = AgentMetadata(
                 name=name,
                 description=description,
                 keywords=keywords,
                 command=command
             )
-            intent.intent_recognizer.register_agent(metadata)
 
             self._logger.info(f"Registered agent: {name}")
             return cls
@@ -74,6 +73,14 @@ class AgentRegistry:
     def get_all_executors(self) -> Dict[str, Type[BaseExecutor]]:
         """获取所有执行器类"""
         return self._executors.copy()
+
+    def get_all_metadata(self) -> Dict[str, AgentMetadata]:
+        """获取所有注册的 Agent 元数据
+
+        Returns:
+            Agent 名称到元数据的映射
+        """
+        return self._metadata.copy()
 
 
 # 全局 Agent 注册器实例

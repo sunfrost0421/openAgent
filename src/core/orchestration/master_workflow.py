@@ -5,11 +5,10 @@ from typing import NamedTuple
 
 from langchain_core.messages import BaseMessage, AIMessage
 
-from src.core.session_manager import SessionManager, session_manager as global_session_manager
-from src.core.intent import IntentRecognizer, intent_recognizer as global_intent_recognizer, IntentResult
-from src.core.session_store import Session
-from src.orchestration.base_executor import BaseExecutor
-from src.orchestration.registry import agent_registry
+from src.core.session.manager import SessionManager, session_manager as global_session_manager
+from src.core.orchestration.intent import IntentRecognizer, intent_recognizer as global_intent_recognizer, IntentResult
+from src.core.orchestration.executor import BaseExecutor
+from src.core.orchestration.registry import agent_registry
 from src.config import Config
 
 

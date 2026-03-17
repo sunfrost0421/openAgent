@@ -2,10 +2,10 @@
 
 from typing import List
 
-from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
+from langchain_core.messages import BaseMessage, HumanMessage
 
-from src.core.session_store import Session, Turn
-from src.core.memory_session_store import MemorySessionStore
+from src.core.session.models import Session, Turn
+from src.core.session.store import MemorySessionStore
 from src.config import Config
 
 
@@ -22,7 +22,7 @@ class SessionManager:
         """初始化会话管理器
 
         Args:
-            store: 会话存储实例，默认使用全局 memory_session_store
+            store: 会话存储实例，默认使用全局 memory_store
         """
         self._store = store or MemorySessionStore()
         self._config = Config.get()

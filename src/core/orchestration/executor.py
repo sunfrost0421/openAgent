@@ -5,8 +5,8 @@ from typing import List
 
 from langchain_core.messages import BaseMessage
 
-from src.core.session_store import Session
-from src.core.session_manager import SessionManager
+from src.core.session.models import Session
+from src.core.session.manager import SessionManager
 
 
 class BaseExecutor(ABC):

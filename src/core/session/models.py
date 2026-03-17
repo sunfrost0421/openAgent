@@ -1,4 +1,4 @@
-"""会话存储抽象接口"""
+"""会话数据模型"""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
