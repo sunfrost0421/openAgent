@@ -3,10 +3,12 @@
 from typing import List
 
 from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages.utils import count_tokens_approximately
 
 from src.core.session.models import Session, Turn
 from src.core.session.store import MemorySessionStore
 from src.config import Config
+from src.infra.llm import create_llm
 
 
 class SessionManager:
@@ -16,6 +18,7 @@ class SessionManager:
     - 会话的获取和保存
     - 轮次的添加和压缩
     - 上下文消息的提取
+    - Token 计数和摘要生成
     """
 
     def __init__(self, store: MemorySessionStore | None = None):
@@ -26,6 +29,7 @@ class SessionManager:
         """
         self._store = store or MemorySessionStore()
         self._config = Config.get()
+        self._summary_llm = None  # 懒加载摘要模型
 
     def create_session_id(self, user_id: str, channel_id: str) -> str:
         """创建会话 ID"""
@@ -83,10 +87,60 @@ class SessionManager:
             if not session.turns[i].is_compressed:
                 session.turns[i].compress()
 
+    def _count_tokens(self, messages: List[BaseMessage]) -> int:
+        """计算消息列表的 token 数量
+
+        Args:
+            messages: 消息列表
+
+        Returns:
+            token 数量
+        """
+        return count_tokens_approximately(messages)
+
+    def _get_summary_llm(self):
+        """获取用于摘要的 LLM 实例（懒加载）"""
+        if self._summary_llm is None:
+            self._summary_llm = create_llm(
+                model_name=self._config.SUMMARY_MODEL
+            )
+        return self._summary_llm
+
+    async def _generate_summary(self, messages: List[BaseMessage]) -> str:
+        """使用 LLM 生成消息摘要
+
+        Args:
+            messages: 需要摘要的消息列表
+
+        Returns:
+            摘要字符串
+        """
+        if not messages:
+            return ""
+
+        llm = self._get_summary_llm()
+        from langchain_core.messages import HumanMessage, SystemMessage
+
+        summary_prompt = SystemMessage(
+            content="请用简洁的语言总结以下对话内容，保留关键信息（如文件名、函数名、执行结果等）。"
+        )
+        messages_to_summarize = [
+            summary_prompt,
+            HumanMessage(content=f"请总结以下对话：\n\n{messages}")
+        ]
+
+        try:
+            result = await llm.ainvoke(messages_to_summarize)
+            return result.content
+        except Exception as e:
+            # 摘要生成失败时返回空字符串，不影响主流程
+            return f"[摘要生成失败：{str(e)}]"
+
     def get_context_messages(self, session: Session) -> List[BaseMessage]:
         """获取会话上下文消息"""
         return session.get_context_messages(
-            keep_turns=self._config.CONTEXT_KEEP_TURNS
+            keep_turns=self._config.CONTEXT_KEEP_TURNS,
+            max_tokens=self._config.CONTEXT_MAX_TOKENS
         )
 
     async def cleanup_expired(self) -> None:

@@ -17,7 +17,13 @@ class Config:
 
     # 会话管理配置
     SESSION_TIMEOUT_MINUTES: int = 30
-    CONTEXT_KEEP_TURNS: int = 3  # 保留多少轮的完整上下文
+    CONTEXT_KEEP_TURNS: int = 3  # 保留多少轮的完整上下文（基于轮次的压缩）
+
+    # 上下文压缩配置（基于 LangChain SummarizationMiddleware）
+    CONTEXT_MAX_TOKENS: int = 8000  # 上下文最大 token 数
+    CONTEXT_SUMMARY_THRESHOLD: float = 0.8  # 触发摘要的阈值（80%）
+    CONTEXT_KEEP_RECENT_MESSAGES: int = 10  # 保留最近 N 条消息（基于 token 的压缩）
+    SUMMARY_MODEL: str = "qwen3.5-plus"  # 摘要生成模型
 
     @classmethod
     def get(cls) -> "Config":

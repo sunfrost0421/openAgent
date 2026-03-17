@@ -4,13 +4,14 @@ from typing import List
 
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain.agents import create_agent
-from langgraph.checkpoint.memory import MemorySaver
+from langchain.agents.middleware import SummarizationMiddleware
 
 from src.core.orchestration.executor import BaseExecutor
 from src.core.orchestration.registry import agent_registry
 from src.infra.llm import create_llm
 from src.features.prompts import Prompts
 from src.features.code.tools import get_all_tools
+from src.config import Config
 
 
 @agent_registry.register(
@@ -40,12 +41,20 @@ class CodeAgent(BaseExecutor):
         self.tools = get_all_tools()
         self.llm = create_llm()
 
-        # 创建 agent（使用内存 Checkpointer）
-        # 注：checkpointer 用于 Agent 内部状态持久化，与 SessionManager 独立
+        # 获取配置
+        config = Config.get()
+
+        # 创建 agent（带上下文压缩中间件）
         self.agent = create_agent(
             model=self.llm,
             tools=self.tools,
-            checkpointer=MemorySaver()  # 开发阶段使用内存
+            middleware=[
+                SummarizationMiddleware(
+                    model=self.llm,
+                    trigger=("tokens", config.CONTEXT_MAX_TOKENS),
+                    keep=("messages", config.CONTEXT_KEEP_RECENT_MESSAGES)
+                )
+            ],
         )
 
     async def run(self) -> List[BaseMessage]:
@@ -63,8 +72,7 @@ class CodeAgent(BaseExecutor):
 
         # 调用 agent（自动工具选择和执行）
         result = await self.agent.ainvoke(
-            {"messages": messages},
-            config={"configurable": {"thread_id": f"{self.session.user_id}_{self.session.channel_id}"}}
+            {"messages": messages}
         )
 
         return result["messages"]
