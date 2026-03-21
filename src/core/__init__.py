@@ -7,7 +7,8 @@ from src.core.orchestration.intent import IntentRecognizer, intent_recognizer
 from src.core.orchestration.executor import BaseExecutor
 
 # 会话管理相关
-from src.core.session.models import Session, Turn, BaseSessionStore
+from src.core.session.models import Session, Turn
+from src.core.session.store.base import BaseSessionStore
 from src.core.session.store import MemorySessionStore, memory_store
 from src.core.session.manager import SessionManager, session_manager
 

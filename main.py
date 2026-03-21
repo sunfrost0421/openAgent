@@ -14,6 +14,8 @@ from src.core.orchestration.intent import intent_recognizer
 from src.controller.bot_controller import router
 from src.controller.web_controller import router as web_router
 from src.core.session.manager import session_manager
+from src.infra.database import db_manager
+from src.config import Config
 
 
 _logger = logging.getLogger("main")
@@ -23,14 +25,29 @@ _logger = logging.getLogger("main")
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     _logger.info("Starting Agent System...")
+
+    # 初始化数据库（如果使用 MySQL）
+    config = Config.get()
+    if config.USE_MYSQL:
+        _logger.info(f"Connecting to MySQL at {config.MYSQL_HOST}:{config.MYSQL_PORT}")
+        await db_manager.init(create_tables=True)
+        _logger.info("Database initialized")
+    else:
+        _logger.info("Using in-memory session storage")
+
     # 显式注册所有 Agent 到意图识别器
     for name, metadata in agent_registry.get_all_metadata().items():
         intent_recognizer.register_agent(metadata)
         _logger.info(f"Registered agent with intent_recognizer: {name}")
+
     yield
+
     _logger.info("Shutting down Agent System...")
     # 清理过期会话
     await session_manager.cleanup_expired()
+    # 关闭数据库连接
+    if config.USE_MYSQL:
+        await db_manager.close()
 
 
 app = FastAPI(
