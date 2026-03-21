@@ -1,6 +1,5 @@
 """会话数据模型"""
 
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import List
@@ -94,22 +93,3 @@ class Session:
                     break
 
         return messages
-
-
-class BaseSessionStore(ABC):
-    """会话存储抽象基类"""
-
-    @abstractmethod
-    async def get_session(self, session_id: str) -> Session:
-        """获取会话"""
-        pass
-
-    @abstractmethod
-    async def save_session(self, session: Session) -> None:
-        """保存会话"""
-        pass
-
-    @abstractmethod
-    async def cleanup_expired(self) -> None:
-        """清理过期会话"""
-        pass

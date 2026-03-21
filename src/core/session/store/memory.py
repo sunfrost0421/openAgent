@@ -5,7 +5,8 @@ import logging
 from datetime import datetime
 from typing import Dict
 
-from src.core.session.models import BaseSessionStore, Session
+from src.core.session.models import Session
+from src.core.session.store.base import BaseSessionStore
 
 
 class MemorySessionStore(BaseSessionStore):
