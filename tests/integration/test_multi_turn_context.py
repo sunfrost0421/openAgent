@@ -133,7 +133,10 @@ async def test_context_token_compression():
     assert compressed_count >= 7, f"Expected at least 7 compressed turns, got {compressed_count}"
 
     # 验证：获取上下文消息数量应该受控
-    context_messages = session_manager.get_context_messages(session)
+    context_messages = session.get_context_messages(
+        keep_turns=config.CONTEXT_KEEP_TURNS,
+        max_tokens=config.CONTEXT_MAX_TOKENS
+    )
     # 3 轮完整消息（每轮 2 条）+ 7 轮 final_reply（每轮 1 条）= 13 条
     expected_max = config.CONTEXT_KEEP_TURNS * 2 + (10 - config.CONTEXT_KEEP_TURNS)
     assert len(context_messages) <= expected_max, \

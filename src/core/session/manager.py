@@ -136,13 +136,6 @@ class SessionManager:
             # 摘要生成失败时返回空字符串，不影响主流程
             return f"[摘要生成失败：{str(e)}]"
 
-    def get_context_messages(self, session: Session) -> List[BaseMessage]:
-        """获取会话上下文消息"""
-        return session.get_context_messages(
-            keep_turns=self._config.CONTEXT_KEEP_TURNS,
-            max_tokens=self._config.CONTEXT_MAX_TOKENS
-        )
-
     async def cleanup_expired(self) -> None:
         """清理过期会话"""
         await self._store.cleanup_expired()

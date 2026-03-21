@@ -1,90 +1,90 @@
 ---
 name: weekly_plan
-description: Use this skill when the user wants to create a weekly plan, organize their week, or break down weekly goals into actionable tasks
+description: 当用户想要创建周计划、整理一周安排、或将周目标分解为可执行的任务时使用此技能
 ---
-# Weekly Plan Skill
+# 周计划技能
 
-## Purpose
-Help users create structured, actionable weekly plans that connect daily tasks to bigger picture goals.
+## 目的
+帮助用户创建结构化的、可执行的一周计划，将日常任务与更大的目标联系起来。
 
-## When to Use
-- User wants to plan their week (upcoming week, current week, or any 7-day period)
-- User needs help organizing tasks and priorities for the week
-- User wants to break down weekly goals into daily actions
-- User wants to review or adjust their existing weekly plan
+## 使用场景
+- 用户想要规划一周（接下来的一周、当前周或任何 7 天周期）
+- 用户需要帮助组织本周的任务和优先级
+- 用户想要将周目标分解为每日行动
+- 用户想要回顾或调整现有的周计划
 
-## Workflow
+## 工作流程
 
-### Phase 1: Discovery
-Before creating the plan, understand the context:
+### 第一阶段：了解情况
+在创建计划之前，了解上下文：
 
-1. **Timeframe**: Which week are we planning? (start date or "next week", "this week")
-2. **Focus Areas**: What are the 2-3 main areas of focus? (work projects, personal goals, health, etc.)
-3. **Constraints**: Any fixed commitments, meetings, or unavailable days?
-4. **Priorities**: What are the top 1-3 outcomes they want to achieve this week?
+1. **时间范围**：规划哪一周？（开始日期或"下周"、"这周"）
+2. **重点领域**：主要的 2-3 个关注领域是什么？（工作项目、个人目标、健康等）
+3. **约束条件**：是否有任何固定的承诺、会议或不可用的日期？
+4. **优先级**：本周他们想要完成的最重要的 1-3 个结果是什么？
 
-### Phase 2: Plan Creation
-Build the plan structure:
+### 第二阶段：创建计划
+构建计划结构：
 
-1. **Weekly Theme**: Define an overarching theme or intention for the week
-2. **Key Goals**: List 3-5 measurable goals for the week
-3. **Daily Breakdown**: Assign specific tasks to each day
-   - Group related tasks together
-   - Include 1-3 priority tasks per day
-   - Leave buffer time for the unexpected
-4. **Checkpoints**: Add review points (mid-week check, Friday review)
+1. **周主题**：定义本周的总体主题或意图
+2. **关键目标**：列出本周的 3-5 个可衡量的目标
+3. **每日分解**：为每天分配具体任务
+   - 将相关任务分组
+   - 每天安排 1-3 个优先级任务
+   - 留出缓冲时间应对意外情况
+4. **检查点**：添加回顾点（周中检查、周五回顾）
 
-### Phase 3: Review
-Validate the plan:
+### 第三阶段：回顾
+验证计划：
 
-1. **Realistic Check**: Is the workload achievable?
-2. **Priority Alignment**: Do daily tasks support weekly goals?
-3. **Balance**: Is there time for rest and unexpected events?
-4. **Clarity**: Are tasks specific and actionable?
+1. **现实性检查**：工作量是否可实现？
+2. **优先级对齐**：每日任务是否支持周目标？
+3. **平衡**：是否有休息和应对意外事件的时间？
+4. **清晰度**：任务是否具体且可执行？
 
-## Output Format
+## 输出格式
 
-Present the plan using this structure:
+使用以下结构呈现计划：
 
 ```markdown
-## Week Plan: [Date Range]
+## 周计划：[日期范围]
 
-### Theme
-[One sentence describing the week's focus]
+### 主题
+[用一句话描述本周的焦点]
 
-### Key Goals
-- [ ] [Goal 1 - measurable]
-- [ ] [Goal 2 - measurable]
-- [ ] [Goal 3 - measurable]
+### 关键目标
+- [ ] [目标 1 - 可衡量]
+- [ ] [目标 2 - 可衡量]
+- [ ] [目标 3 - 可衡量]
 
-### Daily Breakdown
+### 每日分解
 
-**Monday [Date]**
-- [ ] [Priority task]
-- [ ] [Supporting task]
+**周一 [日期]**
+- [ ] [优先级任务]
+- [ ] [支持性任务]
 
-**Tuesday [Date]**
-- [ ] [Priority task]
-- [ ] [Supporting task]
+**周二 [日期]**
+- [ ] [优先级任务]
+- [ ] [支持性任务]
 
-[Continue for each day...]
+[每天继续...]
 
-### Weekly Review
-- Mid-week check: Wednesday
-- Week closure: Friday end of day
+### 周回顾
+- 周中检查：周三
+- 周结束：周五下班前
 ```
 
-## Tips for Effective Plans
+## 有效计划的提示
 
-1. **Be Realistic**: Plan 60-70% of available time; leave buffer
-2. **Single Focus**: One major task per day = better than multiple half-finished
-3. **Energy Matching**: Put hard tasks on high-energy days
-4. **Review Ritual**: End each week with a 10-minute review
-5. **Flexibility**: Plans guide, not constrain - adjust as needed
+1. **保持现实**：规划 60-70% 的可用时间；留出缓冲
+2. **单一焦点**：每天一项主要任务 = 比多项任务都半途而废更好
+3. **精力匹配**：把困难的任务安排在高精力的日子
+4. **回顾仪式**：每周结束时花 10 分钟回顾
+5. **灵活性**：计划是指导，不是束缚 - 根据需要调整
 
-## Follow-Up Suggestions
+## 后续建议
 
-After presenting the plan, offer:
-- "Would you like me to help you break down any specific day?"
-- "Should we set up check-in reminders for this plan?"
-- "Do you want to adjust any part of this plan?"
+呈现计划后，提供：
+- "你想让我帮你分解任何具体的一天吗？"
+- "我们应该为这个计划设置检查提醒吗？"
+- "你想要调整这个计划的任何部分吗？"

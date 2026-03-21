@@ -40,12 +40,19 @@ class BaseExecutor(ABC):
     def get_context_messages(self) -> List[BaseMessage]:
         """获取历史上下文消息
 
+        从配置中获取参数，委托给 Session.get_context_messages() 实现
+
         Returns:
             历史上下文消息列表，如果没有 session_manager 则返回空列表
         """
         if self._session_manager is None:
             return []
-        return self._session_manager.get_context_messages(self.session)
+        from src.config import Config
+        config = Config.get()
+        return self.session.get_context_messages(
+            keep_turns=config.CONTEXT_KEEP_TURNS,
+            max_tokens=config.CONTEXT_MAX_TOKENS
+        )
 
     @abstractmethod
     async def run(self) -> List[BaseMessage]:
