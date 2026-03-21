@@ -25,10 +25,28 @@ class Config:
     CONTEXT_KEEP_RECENT_MESSAGES: int = 10  # 保留最近 N 条消息（基于 token 的压缩）
     SUMMARY_MODEL: str = "qwen3.5-plus"  # 摘要生成模型
 
+    # ========== 新增：MySQL 配置 ==========
+    MYSQL_HOST: str = "localhost"
+    MYSQL_PORT: int = 3306
+    MYSQL_USER: str = "root"
+    MYSQL_PASSWORD: str = "123456"
+    MYSQL_DATABASE: str = "qrc_session"
+    USE_MYSQL: bool = False  # 默认使用内存存储，需要时开启
+
     @classmethod
     def get(cls) -> "Config":
         """获取全局配置实例"""
         return _global_config
+
+    def get_database_url(self) -> str:
+        """获取数据库连接 URL"""
+        if self.USE_MYSQL:
+            return (
+                f"mysql+asyncmy://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
+                f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
+            )
+        else:
+            return "sqlite+aiosqlite:///:memory:"
 
 
 _global_config = Config()
