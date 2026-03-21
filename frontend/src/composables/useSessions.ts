@@ -1,5 +1,5 @@
 import { useSessionStore } from '@/stores/sessionStore'
-import { api } from '@/api/client'
+import api from '@/api/client'
 
 export function useSessions() {
   const sessionStore = useSessionStore()

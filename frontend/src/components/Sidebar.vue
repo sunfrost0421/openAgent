@@ -17,8 +17,7 @@ function handleSelect(sessionId: string) {
   emit('select', sessionId)
 }
 
-function handleDelete(sessionId: string, event: Event) {
-  event.stopPropagation()
+function handleDelete(sessionId: string) {
   emit('delete', sessionId)
 }
 </script>
@@ -38,7 +37,7 @@ function handleDelete(sessionId: string, event: Event) {
         @click="handleSelect(sessionId)"
       >
         <span class="session-name">{{ sessionId.slice(0, 20) }}...</span>
-        <button class="delete-btn" @click="handleDelete(sessionId)">×</button>
+        <button class="delete-btn" @click.stop="handleDelete(sessionId)">×</button>
       </div>
       <div v-if="sessionStore.sessions.length === 0" class="empty-message">
         暂无会话，点击"+新建"开始

@@ -1,7 +1,6 @@
 import { setActivePinia, createPinia } from 'pinia'
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useChatStore } from '../chatStore'
-import type { Message } from '@/types'
 
 describe('chatStore', () => {
   beforeEach(() => {
