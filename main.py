@@ -7,9 +7,12 @@ from fastapi import FastAPI
 
 # 导入 features 模块以注册 Agent
 from src.features.code import code_agent  # noqa: F401
+from src.features.plan import plan_agent
+from src.features.default import default_agent
 from src.core.orchestration.registry import agent_registry
 from src.core.orchestration.intent import intent_recognizer
 from src.controller.bot_controller import router
+from src.controller.web_controller import router as web_router
 from src.core.session.manager import session_manager
 
 
@@ -39,6 +42,7 @@ app = FastAPI(
 
 # 注册路由
 app.include_router(router, prefix="/api/v1")
+app.include_router(web_router, prefix="/api/v1/web")
 
 
 @app.get("/health")
