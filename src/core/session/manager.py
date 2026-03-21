@@ -1,14 +1,18 @@
 """会话管理器"""
 
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.messages.utils import count_tokens_approximately
 
 from src.core.session.models import Session, Turn
-from src.core.session.store import MemorySessionStore
+from src.core.session.store.base import BaseSessionStore
 from src.config import Config
 from src.infra.llm import create_llm
+
+# 延迟导入以避免循环依赖
+if TYPE_CHECKING:
+    from src.core.session.store.memory import MemorySessionStore
 
 
 class SessionManager:
@@ -21,13 +25,24 @@ class SessionManager:
     - Token 计数和摘要生成
     """
 
-    def __init__(self, store: MemorySessionStore | None = None):
+    def __init__(self, store: BaseSessionStore | None = None):
         """初始化会话管理器
 
         Args:
-            store: 会话存储实例，默认使用全局 memory_store
+            store: 会话存储实例，为 None 时根据配置自动选择
         """
-        self._store = store or MemorySessionStore()
+        if store is None:
+            # 根据配置选择 store
+            config = Config.get()
+            if config.USE_MYSQL:
+                from src.core.session.store.mysql import MySQLSessionStore
+                from src.infra.database import db_manager
+                store = MySQLSessionStore(db_manager.get_session_maker())
+            else:
+                from src.core.session.store.memory import MemorySessionStore
+                store = MemorySessionStore()
+
+        self._store = store
         self._config = Config.get()
         self._summary_llm = None  # 懒加载摘要模型
 
