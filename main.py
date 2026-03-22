@@ -1,7 +1,14 @@
 """Agent 系统应用入口"""
 
 import logging
+import os
+import sys
 from contextlib import asynccontextmanager
+
+# 将项目根目录添加到 Python 路径，支持 src 目录结构
+project_root = os.path.dirname(os.path.abspath(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from fastapi import FastAPI
 
@@ -9,6 +16,7 @@ from fastapi import FastAPI
 from src.features.code import code_agent  # noqa: F401
 from src.features.plan import plan_agent
 from src.features.default import default_agent
+from src.features.diff_analysis import diff_agent  # noqa: F401
 from src.core.orchestration.registry import agent_registry
 from src.core.orchestration.intent import intent_recognizer
 from src.controller.bot_controller import router

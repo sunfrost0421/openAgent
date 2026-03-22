@@ -39,10 +39,10 @@ class MySQLSessionStore(BaseSessionStore):
 
                 return self._create_new_session(session_id, user_id, channel_id)
 
-            # 显式加载 turns（使用异步查询）
+            # 显式加载 turns（使用异步查询）- 使用 session_id 字符串而非 id 数字主键
             turns_result = await session.execute(
                 select(TurnModel)
-                .where(TurnModel.session_id == session_model.id)
+                .where(TurnModel.session_id == session_model.session_id)
                 .order_by(TurnModel.created_at)
             )
             turn_models = turns_result.scalars().all()
@@ -149,10 +149,10 @@ class MySQLSessionStore(BaseSessionStore):
         self, db_session, session_model: SessionModel, session: Session
     ) -> None:
         """同步 Turns 数据（差量更新）"""
-        # 先显式加载现有 turns（因为 lazy="noload"）
+        # 先显式加载现有 turns（因为 lazy="noload"）- 使用 session_id 字符串而非 id 数字主键
         turns_result = await db_session.execute(
             select(TurnModel)
-            .where(TurnModel.session_id == session_model.id)
+            .where(TurnModel.session_id == session_model.session_id)
         )
         turn_models = list(turns_result.scalars().all())
 
@@ -193,48 +193,36 @@ class MySQLSessionStore(BaseSessionStore):
                 db_session.add(turn_model)
 
     def _serialize_messages(self, messages: list) -> str:
-        """序列化消息列表为 JSON"""
-        from langchain_core.messages import BaseMessage
+        """序列化消息列表为 JSON - 使用 LangChain 官方 API
 
-        serialized = []
-        for msg in messages:
-            if isinstance(msg, BaseMessage):
-                serialized.append(msg.model_dump())
-            else:
-                serialized.append(msg)
-        return json.dumps(serialized, ensure_ascii=False, default=str)
+        Args:
+            messages: BaseMessage 对象列表
+
+        Returns:
+            JSON 字符串，格式为 [{"type": "...", "data": {...}}, ...]
+        """
+        from langchain_core.messages import messages_to_dict
+
+        # 使用 LangChain 官方工具函数，输出 {"type": "...", "data": {...}} 格式
+        serialized = messages_to_dict(messages)
+        return json.dumps(serialized, ensure_ascii=False)
 
     def _deserialize_messages(self, data: str) -> list:
-        """从 JSON 反序列化消息列表"""
+        """从 JSON 反序列化消息列表 - 使用 LangChain 官方 API
+
+        Args:
+            data: JSON 字符串
+
+        Returns:
+            BaseMessage 对象列表
+        """
         if not data:
             return []
 
         try:
             messages_data = json.loads(data)
-            # 将字典数据转换回 BaseMessage 对象
-            from langchain_core.messages import BaseMessage, messages_from_dict
-            # 尝试使用 LangChain 的 messages_from_dict 工具函数
-            try:
-                return messages_from_dict(messages_data)
-            except Exception:
-                # 如果转换失败，手动转换
-                result = []
-                for msg_data in messages_data:
-                    if isinstance(msg_data, dict) and 'type' in msg_data:
-                        msg_type = msg_data['type']
-                        content = msg_data.get('content', '')
-                        if msg_type == 'human':
-                            from langchain_core.messages import HumanMessage
-                            result.append(HumanMessage(content=content))
-                        elif msg_type == 'ai':
-                            from langchain_core.messages import AIMessage
-                            result.append(AIMessage(content=content))
-                        elif msg_type == 'system':
-                            from langchain_core.messages import SystemMessage
-                            result.append(SystemMessage(content=content))
-                    elif isinstance(msg_data, BaseMessage):
-                        result.append(msg_data)
-                return result if result else messages_data
-        except json.JSONDecodeError:
-            self._logger.error(f"Failed to deserialize messages: {data}")
+            from langchain_core.messages import messages_from_dict
+            return messages_from_dict(messages_data)
+        except json.JSONDecodeError as e:
+            self._logger.error(f"Failed to deserialize messages: {e}")
             return []
