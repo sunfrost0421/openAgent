@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
     config = Config.get()
     if config.USE_MYSQL:
         _logger.info(f"Connecting to MySQL at {config.MYSQL_HOST}:{config.MYSQL_PORT}")
-        await db_manager.init(create_tables=True)
+        await db_manager.init()
         _logger.info("Database initialized")
     else:
         _logger.info("Using in-memory session storage")

@@ -1,12 +1,6 @@
 -- MySQL 会话数据库初始化脚本
 -- 使用方法：mysql -u root -p < scripts/init_db.sql
-
--- 创建数据库
-CREATE DATABASE IF NOT EXISTS qrc_session
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-
-USE qrc_session;
+-- 数据库名：devagent
 
 -- sessions 表
 CREATE TABLE IF NOT EXISTS sessions (

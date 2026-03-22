@@ -7,6 +7,7 @@ from typing import Any, Dict
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.orm import selectinload
 
 from src.core.session.models import Session, Turn
 from src.core.session.store.base import BaseSessionStore
@@ -23,9 +24,10 @@ class MySQLSessionStore(BaseSessionStore):
     async def get_session(self, session_id: str) -> Session:
         """获取会话，不存在则创建"""
         async with self._session_maker() as session:
-            # 查询 SessionModel
+            # 先查询 SessionModel（不加载 turns）
             result = await session.execute(
-                select(SessionModel).where(SessionModel.session_id == session_id)
+                select(SessionModel)
+                .where(SessionModel.session_id == session_id)
             )
             session_model = result.scalar_one_or_none()
 
@@ -36,6 +38,17 @@ class MySQLSessionStore(BaseSessionStore):
                 channel_id = parts[1] if len(parts) > 1 else ""
 
                 return self._create_new_session(session_id, user_id, channel_id)
+
+            # 显式加载 turns（使用异步查询）
+            turns_result = await session.execute(
+                select(TurnModel)
+                .where(TurnModel.session_id == session_model.id)
+                .order_by(TurnModel.created_at)
+            )
+            turn_models = turns_result.scalars().all()
+
+            # 将 turns 附加到 session_model（用于后续操作）
+            session_model.turns = list(turn_models)
 
             # 转换为领域模型
             return self._to_domain_session(session_model)
@@ -102,9 +115,10 @@ class MySQLSessionStore(BaseSessionStore):
         self, db_session, session: Session
     ) -> SessionModel:
         """保存或更新 Session"""
-        # 尝试查询现有记录
+        # 尝试查询现有记录（不加载 turns）
         result = await db_session.execute(
-            select(SessionModel).where(SessionModel.session_id == session.session_id)
+            select(SessionModel)
+            .where(SessionModel.session_id == session.session_id)
         )
         session_model = result.scalar_one_or_none()
 
@@ -135,8 +149,15 @@ class MySQLSessionStore(BaseSessionStore):
         self, db_session, session_model: SessionModel, session: Session
     ) -> None:
         """同步 Turns 数据（差量更新）"""
+        # 先显式加载现有 turns（因为 lazy="noload"）
+        turns_result = await db_session.execute(
+            select(TurnModel)
+            .where(TurnModel.session_id == session_model.id)
+        )
+        turn_models = list(turns_result.scalars().all())
+
         # 获取现有 turn_ids
-        existing_turn_ids = {t.turn_id for t in session_model.turns}
+        existing_turn_ids = {t.turn_id for t in turn_models}
         new_turn_ids = {t.turn_id for t in session.turns}
 
         # 删除不存在的 turns
@@ -153,7 +174,7 @@ class MySQLSessionStore(BaseSessionStore):
             if turn.turn_id in existing_turn_ids:
                 # 更新现有
                 turn_model = next(
-                    t for t in session_model.turns if t.turn_id == turn.turn_id
+                    t for t in turn_models if t.turn_id == turn.turn_id
                 )
                 turn_model.agent_name = turn.agent_name
                 turn_model.messages = self._serialize_messages(turn.messages)
@@ -190,8 +211,30 @@ class MySQLSessionStore(BaseSessionStore):
 
         try:
             messages_data = json.loads(data)
-            # 返回原始数据，由 Session.get_context_messages 处理
-            return messages_data
+            # 将字典数据转换回 BaseMessage 对象
+            from langchain_core.messages import BaseMessage, messages_from_dict
+            # 尝试使用 LangChain 的 messages_from_dict 工具函数
+            try:
+                return messages_from_dict(messages_data)
+            except Exception:
+                # 如果转换失败，手动转换
+                result = []
+                for msg_data in messages_data:
+                    if isinstance(msg_data, dict) and 'type' in msg_data:
+                        msg_type = msg_data['type']
+                        content = msg_data.get('content', '')
+                        if msg_type == 'human':
+                            from langchain_core.messages import HumanMessage
+                            result.append(HumanMessage(content=content))
+                        elif msg_type == 'ai':
+                            from langchain_core.messages import AIMessage
+                            result.append(AIMessage(content=content))
+                        elif msg_type == 'system':
+                            from langchain_core.messages import SystemMessage
+                            result.append(SystemMessage(content=content))
+                    elif isinstance(msg_data, BaseMessage):
+                        result.append(msg_data)
+                return result if result else messages_data
         except json.JSONDecodeError:
             self._logger.error(f"Failed to deserialize messages: {data}")
             return []

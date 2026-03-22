@@ -30,8 +30,8 @@ class Config:
     MYSQL_PORT: int = 3306
     MYSQL_USER: str = "root"
     MYSQL_PASSWORD: str = "123456"
-    MYSQL_DATABASE: str = "qrc_session"
-    USE_MYSQL: bool = False  # 默认使用内存存储，需要时开启
+    MYSQL_DATABASE: str = "devagent"
+    USE_MYSQL: bool = True  # 默认使用内存存储，需要时开启
 
     @classmethod
     def get(cls) -> "Config":

@@ -21,20 +21,12 @@ class DatabaseManager:
         self.engine = None
         self.async_session_maker = None
 
-    async def init(self, create_tables: bool = False) -> None:
-        """初始化数据库连接
-
-        Args:
-            create_tables: 是否自动创建表结构 (仅 MySQL 时需要)
-        """
+    async def init(self) -> None:
+        """初始化数据库连接"""
         self.engine = create_async_engine(self.database_url, echo=False)
         self.async_session_maker = async_sessionmaker(
             self.engine, class_=AsyncSession, expire_on_commit=False
         )
-
-        if create_tables and "mysql" in self.database_url:
-            async with self.engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
 
     async def close(self) -> None:
         """关闭数据库连接"""

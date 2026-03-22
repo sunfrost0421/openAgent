@@ -25,26 +25,37 @@ class SessionManager:
     - Token 计数和摘要生成
     """
 
-    def __init__(self, store: BaseSessionStore | None = None):
+    def __init__(self, store: BaseSessionStore | None = None, lazy_init: bool = False):
         """初始化会话管理器
 
         Args:
             store: 会话存储实例，为 None 时根据配置自动选择
+            lazy_init: 是否延迟初始化，为 True 时会在首次使用时初始化 store
         """
-        if store is None:
-            # 根据配置选择 store
-            config = Config.get()
-            if config.USE_MYSQL:
-                from src.core.session.store.mysql import MySQLSessionStore
-                from src.infra.database import db_manager
-                store = MySQLSessionStore(db_manager.get_session_maker())
-            else:
-                from src.core.session.store.memory import MemorySessionStore
-                store = MemorySessionStore()
-
         self._store = store
         self._config = Config.get()
         self._summary_llm = None  # 懒加载摘要模型
+        self._lazy_init = lazy_init
+        self._initialized = not lazy_init
+
+        if not lazy_init and store is None:
+            self._init_store()
+
+    def _init_store(self):
+        """初始化 store（延迟初始化时使用）"""
+        if self._config.USE_MYSQL:
+            from src.core.session.store.mysql import MySQLSessionStore
+            from src.infra.database import db_manager
+            self._store = MySQLSessionStore(db_manager.get_session_maker())
+        else:
+            from src.core.session.store.memory import MemorySessionStore
+            self._store = MemorySessionStore()
+        self._initialized = True
+
+    def _ensure_initialized(self):
+        """确保 store 已初始化（延迟初始化时使用）"""
+        if not self._initialized:
+            self._init_store()
 
     def create_session_id(self, user_id: str, channel_id: str) -> str:
         """创建会话 ID"""
@@ -54,6 +65,7 @@ class SessionManager:
         self, user_id: str, channel_id: str
     ) -> Session:
         """获取或创建会话"""
+        self._ensure_initialized()
         session_id = self.create_session_id(user_id, channel_id)
         return await self._store.get_session(session_id)
 
@@ -77,6 +89,7 @@ class SessionManager:
         Returns:
             添加的 Turn 实例
         """
+        self._ensure_initialized()
         # 确保消息列表包含用户输入
         if not messages or not isinstance(messages[0], HumanMessage):
             messages = [HumanMessage(content=user_message), *messages]
@@ -153,8 +166,9 @@ class SessionManager:
 
     async def cleanup_expired(self) -> None:
         """清理过期会话"""
+        self._ensure_initialized()
         await self._store.cleanup_expired()
 
 
-# 全局会话管理器实例
-session_manager = SessionManager()
+# 全局会话管理器实例（使用延迟初始化）
+session_manager = SessionManager(lazy_init=True)

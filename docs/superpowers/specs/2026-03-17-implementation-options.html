@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeAgent 实现方式对比</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
+        h1 { color: #00d9ff; margin-bottom: 30px; }
+        h2 { color: #a855f7; margin-top: 25px; margin-bottom: 15px; }
+        .section { background: #16213e; border-radius: 10px; padding: 20px; margin-bottom: 25px; }
+        pre { background: #0f0f23; padding: 15px; border-radius: 8px; overflow-x: auto; margin: 15px 0; }
+        code { font-family: 'Consolas', 'Monaco', monospace; font-size: 0.85em; }
+        .kw { color: #c678dd; }  /* keyword */
+        .fn { color: #61afef; }  /* function */
+        .str { color: #98c379; } /* string */
+        .cmt { color: #5c6370; font-style: italic; } /* comment */
+        .cls { color: #e5c07b; } /* class */
+        .imp { color: #e06c75; font-weight: bold; } /* important */
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .comparison { grid-template-columns: 1fr; } }
+        .option { background: #1e1e3f; border-radius: 8px; padding: 15px; }
+        .option h3 { color: #00d9ff; margin-bottom: 15px; }
+        .pros { border-left: 3px solid #4ade80; padding-left: 10px; margin: 10px 0; }
+        .cons { border-left: 3px solid #f87171; padding-left: 10px; margin: 10px 0; }
+        .pros-title { color: #4ade80; font-weight: bold; margin-bottom: 5px; }
+        .cons-title { color: #f87171; font-weight: bold; margin-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px; border: 1px solid #333; text-align: left; }
+        th { background: #0f3460; color: #00d9ff; }
+        tr:nth-child(even) { background: #1e1e3f; }
+        .recommendation { background: linear-gradient(135deg, #1e3a5f, #16213e); border: 2px solid #00d9ff; border-radius: 10px; padding: 20px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>CodeAgent 实现方式对比</h1>
+
+    <div class="section">
+        <h2>选项 1: 保留 BaseExecutor 继承结构</h2>
+        <div class="option">
+            <h3>实现方式</h3>
+            <pre><code><span class="kw">from</span> src.core.orchestration.executor <span class="kw">import</span> BaseExecutor
+<span class="kw">from</span> src.core.orchestration.registry <span class="kw">import</span> agent_registry
+<span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent
+<span class="kw">from</span> langchain.tools <span class="kw">import</span> tool
+
+<span class="cmt"># 定义工具</span>
+<span class="kw">@tool</span>
+<span class="kw">def</span> <span class="fn">read_file</span>(path: str) -> str:
+    <span class="str">"""读取文件内容"""</span>
+    <span class="kw">with open</span>(path, <span class="str">'r'</span>) <span class="kw">as</span> f:
+        <span class="kw">return</span> f.read()
+
+<span class="kw">@tool</span>
+<span class="kw">def</span> <span class="fn">execute_code</span>(code: str) -> str:
+    <span class="str">"""执行 Python 代码"""</span>
+    <span class="cmt"># 执行逻辑...</span>
+
+<span class="cmt"># CodeAgent 继承 BaseExecutor</span>
+<span class="kw">@agent_registry.register</span>(
+    name=<span class="str">"code_agent"</span>,
+    description=<span class="str">"处理代码相关请求"</span>,
+    keywords=[<span class="str">"代码"</span>, <span class="str">"编程"</span>],
+    command=<span class="str">"@code"</span>
+)
+<span class="kw">class</span> <span class="cls">CodeAgent</span>(BaseExecutor):
+    <span class="kw">async def</span> <span class="fn">run</span>(self) -> List[BaseMessage]:
+        <span class="cmt"># 在 run 方法内部使用 LangChain create_agent</span>
+        tools = [read_file, execute_code]
+        agent = create_agent(llm, tools)
+
+        <span class="cmt"># 构建消息（使用基类方法获取上下文）</span>
+        messages = [
+            SystemMessage(content=prompt),
+            *self.get_context_messages(),  <span class="cmt"># ← 使用基类方法</span>
+            HumanMessage(content=self.user_message)
+        ]
+
+        <span class="cmt"># 调用 agent 而非直接调用 llm</span>
+        result = <span class="kw">await</span> agent.ainvoke({<span class="str">"messages"</span>: messages})
+        <span class="kw">return</span> result[<span class="str">"messages"</span>]</code></pre>
+
+            <div class="pros">
+                <div class="pros-title">优点</div>
+                <ul>
+                    <li>保持与现有架构的兼容性</li>
+                    <li>复用 BaseExecutor 的 get_context_messages() 方法</li>
+                    <li>不改变 MasterWorkflow 的调用方式</li>
+                    <li>渐进式改造，风险低</li>
+                </ul>
+            </div>
+            <div class="cons">
+                <div class="cons-title">缺点</div>
+                <ul>
+                    <li>混合架构风格（自研 + LangChain）</li>
+                    <li>无法充分利用 LangChain 的 Runnable 接口特性</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>选项 2: 完全 LangChain 化 (Runnable 接口)</h2>
+        <div class="option">
+            <h3>什么是 LangChain Runnable 接口？</h3>
+            <p style="margin-bottom: 15px;">
+                LangChain 的 <code>Runnable</code> 是一个统一接口，所有组件（LLM、Chain、Agent、Tool）都实现这个接口，
+                支持 <code>invoke()</code>、<code>ainvoke()</code>、<code>stream()</code>、<code>astream()</code> 等方法。
+            </p>
+
+            <h3>实现方式</h3>
+            <pre><code><span class="kw">from</span> langchain.agents <span class="kw">import</span> create_agent
+<span class="kw">from</span> langchain.tools <span class="kw">import</span> tool
+<span class="kw">from</span> langchain_core.runnables <span class="kw">import</span> RunnableConfig
+
+<span class="cmt"># 不再继承 BaseExecutor</span>
+<span class="cmt"># CodeAgent 本身就是一个 Runnable</span>
+
+<span class="kw">class</span> <span class="cls">CodeAgent</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, session_store, llm):
+        self.session_store = session_store
+        self.llm = llm
+        self.tools = [read_file, execute_code, ...]
+        <span class="cmt"># 创建 agent（这是一个 Runnable）</span>
+        self._agent = create_agent(self.llm, self.tools)
+
+    <span class="cmt"># 实现 Runnable 接口</span>
+    <span class="kw">async def</span> <span class="fn">ainvoke</span>(self, <span class="kw">input</span>: dict, config: RunnableConfig = <span class="kw">None</span>):
+        <span class="cmt"># 直接从 session_store 获取上下文</span>
+        context = <span class="kw">await</span> self.session_store.get_context(input[<span class="str">"user_id"</span>])
+        messages = self._build_messages(<span class="kw">input</span>[<span class="str">"message"</span>], context)
+
+        result = <span class="kw">await</span> self._agent.ainvoke({<span class="str">"messages"</span>: messages}, config)
+
+        <span class="cmt"># 直接保存到 session_store</span>
+        <span class="kw">await</span> self.session_store.save(...)
+
+        <span class="kw">return</span> result
+
+    <span class="cmt"># 还可以支持 stream</span>
+    <span class="kw">async def</span> <span class="fn">astream</span>(self, <span class="kw">input</span>: dict, config: RunnableConfig = <span class="kw">None</span>):
+        <span class="kw">async for</span> chunk <span class="kw">in</span> <span class="kw">await</span> self._agent.astream(...):
+            <span class="kw">yield</span> chunk</code></pre>
+
+            <div class="pros">
+                <div class="pros-title">优点</div>
+                <ul>
+                    <li>纯正 LangChain 风格</li>
+                    <li>支持 <code>stream()</code> 流式输出</li>
+                    <li>可以使用 LangChain 的 Middleware</li>
+                    <li>更容易与 LangGraph 集成</li>
+                    <li>支持 Runnable 组合（<code>|</code> 管道操作）</li>
+                </ul>
+            </div>
+            <div class="cons">
+                <div class="cons-title">缺点</div>
+                <ul>
+                    <li>需要修改 MasterWorkflow 调用方式</li>
+                    <li>需要重新实现会话管理逻辑</li>
+                    <li>改造幅度大，可能引入新问题</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>详细对比表</h2>
+        <table>
+            <tr>
+                <th>维度</th>
+                <th>选项 1: 保留基座</th>
+                <th>选项 2: 完全 LangChain 化</th>
+            </tr>
+            <tr>
+                <td>改造范围</td>
+                <td>仅 CodeAgent.run() 内部</td>
+                <td>CodeAgent + MasterWorkflow</td>
+            </tr>
+            <tr>
+                <td>与 BaseExecutor 关系</td>
+                <td>继承</td>
+                <td>不继承，独立实现</td>
+            </tr>
+            <tr>
+                <td>会话管理</td>
+                <td>使用现有 SessionManager</td>
+                <td>可能需要适配 LangChain Memory</td>
+            </tr>
+            <tr>
+                <td>流式输出</td>
+                <td>不支持</td>
+                <td>支持 (astream)</td>
+            </tr>
+            <tr>
+                <td>Middleware 支持</td>
+                <td>不支持</td>
+                <td>支持</td>
+            </tr>
+            <tr>
+                <td>LangGraph 集成</td>
+                <td>需要适配</td>
+                <td>原生支持</td>
+            </tr>
+            <tr>
+                <td>风险等级</td>
+                <td>低</td>
+                <td>中</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="recommendation">
+        <h2 style="color: #00d9ff;">推荐方案</h2>
+        <p style="font-size: 1.1em; margin-bottom: 15px;">
+            <strong class="imp">选项 1：保留 BaseExecutor 继承结构</strong>
+        </p>
+        <p style="margin-bottom: 15px;">
+            理由：你提到改造目的是"添加工具能力"和"利用 Memory 特性"，这两个目标通过选项 1 就可以实现。
+            选项 2 的好处主要是为了与 LangChain 生态深度集成（如 LangGraph、Middleware），但这需要更大的改造成本。
+        </p>
+        <p>
+            <strong>关于"需要调整"的部分：</strong> 如果你希望引入 LangChain 的 Checkpointer 实现持久化 Memory，
+            这可以在选项 1 的框架下完成——在 create_agent 时传入 checkpointer 参数即可，不需要改变整体架构。
+        </p>
+    </div>
+</body>
+</html>

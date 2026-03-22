@@ -35,7 +35,7 @@ class SessionModel(Base):
         "TurnModel",
         back_populates="session",
         cascade="all, delete-orphan",
-        lazy="selectin"  # 预加载 turns
+        lazy="noload"  # 异步环境中禁用自动懒加载，必须显式加载
     )
 
     __table_args__ = (
@@ -63,4 +63,4 @@ class TurnModel(Base):
     is_compressed = Column(Boolean, default=False)
 
     # 反向关系
-    session = relationship("SessionModel", back_populates="turns")
+    session = relationship("SessionModel", back_populates="turns", lazy="noload")
